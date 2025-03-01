@@ -1,5 +1,5 @@
 /***************************************************************************
-                            SIGPAC-GoUtils.java
+                            SIGPACGoUtils.java
                             -------------------
               begin                : December 6, 2020
               copyright            : (C) 2020 by Mathieu Pellerin
@@ -112,7 +112,7 @@ public class SIGPACGoUtils {
                 String filePath = folder + file.getName();
                 try {
                     InputStream input = resolver.openInputStream(file.getUri());
-                    SIGPAC-GoUtils.inputStreamToFile(input, filePath,
+                    SIGPACGoUtils.inputStreamToFile(input, filePath,
                                                   file.length());
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -168,7 +168,7 @@ public class SIGPACGoUtils {
                     InputStream input = new FileInputStream(f);
                     OutputStream output =
                         resolver.openOutputStream(documentFile.getUri());
-                    SIGPAC-GoUtils.inputStreamToOutputStream(input, output,
+                    SIGPACGoUtils.inputStreamToOutputStream(input, output,
                                                           f.length());
                     output.close();
                 } catch (Exception e) {

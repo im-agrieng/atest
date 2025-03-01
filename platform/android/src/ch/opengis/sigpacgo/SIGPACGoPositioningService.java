@@ -89,7 +89,7 @@ public class SIGPACGoPositioningService extends QtService {
 
     @Override
     public void onCreate() {
-        Log.v("QFieldPositioningService", "onCreate triggered");
+        Log.v("SIGPACGoPositioningService", "onCreate triggered");
         super.onCreate();
 
         if (getInstance() != null) {
@@ -133,8 +133,8 @@ public class SIGPACGoPositioningService extends QtService {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             notificationChannel = new NotificationChannel(
-                CHANNEL_ID, "QField", NotificationManager.IMPORTANCE_DEFAULT);
-            notificationChannel.setDescription("QField Positioning");
+                CHANNEL_ID, "SIGPAC-Go", NotificationManager.IMPORTANCE_DEFAULT);
+            notificationChannel.setDescription("SIGPAC-Go Positioning");
             notificationChannel.setImportance(
                 NotificationManager.IMPORTANCE_LOW);
             notificationChannel.enableLights(false);
@@ -144,7 +144,7 @@ public class SIGPACGoPositioningService extends QtService {
 
         Notification.Builder builder =
             new Notification.Builder(this)
-                .setSmallIcon(R.drawable.qfield_logo)
+                .setSmallIcon(R.drawable.sigpacgo_logo)
                 .setWhen(System.currentTimeMillis())
                 .setOngoing(true)
                 .setContentTitle(getString(R.string.positioning_title))
@@ -176,12 +176,12 @@ public class SIGPACGoPositioningService extends QtService {
                                  boolean addCopyToClipboard) {
         // Return to QField activity when clicking on the notification
         PendingIntent contentIntent = PendingIntent.getActivity(
-            this, 0, new Intent(this, QFieldActivity.class),
+            this, 0, new Intent(this, SIGPACGoActivity.class),
             PendingIntent.FLAG_MUTABLE);
 
         Notification.Builder builder =
             new Notification.Builder(this)
-                .setSmallIcon(R.drawable.qfield_logo)
+                .setSmallIcon(R.drawable.sigpacgo_logo)
                 .setWhen(System.currentTimeMillis())
                 .setOngoing(true)
                 .setContentTitle(getString(R.string.positioning_title))
@@ -194,7 +194,7 @@ public class SIGPACGoPositioningService extends QtService {
         if (addCopyToClipboard) {
             // Allow for position details to be copied to the clipboard
             Intent copyIntent =
-                new Intent(this, QFieldPositioningService.class);
+                new Intent(this, SIGPACGoPositioningService.class);
             copyIntent.putExtra("content", contentText);
             PendingIntent copyPendingIntent = PendingIntent.getService(
                 this, 0, copyIntent, PendingIntent.FLAG_MUTABLE);

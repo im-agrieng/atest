@@ -487,7 +487,7 @@ public class SIGPACGoActivity extends QtActivity {
 
         String storagePath =
             Environment.getExternalStorageDirectory().getAbsolutePath();
-        String rootDataDir = storagePath + "SIGPAC-Go";
+        String rootDataDir = storagePath + "/SIGPAC-Go/";
         File storageFile = new File(rootDataDir);
         storageFile.mkdir();
         if (storageFile.canWrite()) {
@@ -511,7 +511,7 @@ public class SIGPACGoActivity extends QtActivity {
                 }
 
                 // create SIGPACGo directories
-                String dataDir = file.getAbsolutePath() + "SIGPAC-Go";
+                String dataDir = file.getAbsolutePath() + "/SIGPAC-Go/";
                 new File(dataDir + "basemaps/").mkdirs();
                 new File(dataDir + "fonts/").mkdirs();
                 new File(dataDir + "proj/").mkdirs();
@@ -540,7 +540,7 @@ public class SIGPACGoActivity extends QtActivity {
             appDataDirs.append(dataDir);
             appDataDirs.append("--;--");
         }
-        intent.putExtra("SIGPAC-Go_APP_DATA_DIRS", appDataDirs.toString());
+        intent.putExtra("SIGPACGO_APP_DATA_DIRS", appDataDirs.toString());
 
         Intent sourceIntent = getIntent();
         if (sourceIntent.getAction() == Intent.ACTION_VIEW ||
@@ -861,7 +861,7 @@ public class SIGPACGoActivity extends QtActivity {
 
         String timeStamp =
             new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-        resourceTempFilePath = "SIGPAC-GoCamera" + timeStamp;
+        resourceTempFilePath = "SIGPACGoCamera" + timeStamp;
 
         Intent intent = isVideo ? new Intent(MediaStore.ACTION_VIDEO_CAPTURE)
                                 : new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
@@ -945,7 +945,7 @@ public class SIGPACGoActivity extends QtActivity {
             Uri contentUri = Build.VERSION.SDK_INT < 24
                                  ? Uri.fromFile(resourceFile)
                                  : FileProvider.getUriForFile(
-                                       this, "ch.opengis.sigpac-go.fileprovider",
+                                       this, "ch.opengis.sigpacgo.fileprovider",
                                        resourceCacheFile);
 
             Intent intent =
@@ -1272,7 +1272,7 @@ public class SIGPACGoActivity extends QtActivity {
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         try {
-                            Uri uri = Uri.parse("package:ch.opengis.sigpac-go");
+                            Uri uri = Uri.parse("package:ch.opengis.sigpacgo");
                             Intent intent = new Intent(
                                 Settings
                                     .ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
