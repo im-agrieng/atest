@@ -93,7 +93,7 @@ public class SIGPACGoPositioningService extends QtService {
         super.onCreate();
 
         if (getInstance() != null) {
-            Log.v("QFieldPositioningService",
+            Log.v("SIGPACGoPositioningService",
                   "service already running, aborting onCreate.");
             stopSelf();
             return;
@@ -102,7 +102,7 @@ public class SIGPACGoPositioningService extends QtService {
 
     @Override
     public void onDestroy() {
-        Log.v("QFieldPositioningService", "onDestroy triggered");
+        Log.v("SIGPACGoPositioningService", "onDestroy triggered");
         notificationManager.cancel(NOTIFICATION_ID);
         super.onDestroy();
         instance = null;
@@ -110,7 +110,7 @@ public class SIGPACGoPositioningService extends QtService {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.v("QFieldPositioningService", "onStartCommand triggered");
+        Log.v("SIGPACGoPositioningService", "onStartCommand triggered");
 
         if (intent != null && intent.hasExtra("content")) {
             ClipboardManager clipboard =
@@ -121,7 +121,7 @@ public class SIGPACGoPositioningService extends QtService {
 
         int ret = super.onStartCommand(intent, flags, startId);
         if (instance != null) {
-            Log.v("QFieldPositioningService",
+            Log.v("SIGPACGoPositioningService",
                   "service already running, aborting onStartCommand.");
             return START_NOT_STICKY;
         }
@@ -164,7 +164,7 @@ public class SIGPACGoPositioningService extends QtService {
                 startForeground(NOTIFICATION_ID, notification);
             }
         } catch (SecurityException e) {
-            Log.v("QFieldPositioningService",
+            Log.v("SIGPACGoPositioningService",
                   "Missing permission to launch the positioning service");
             return START_NOT_STICKY;
         }
