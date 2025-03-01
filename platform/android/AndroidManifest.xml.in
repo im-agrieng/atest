@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<manifest package="ch.opengis.@APP_PACKAGE_NAME@" xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" android:versionName="@APP_VERSION_STR@" android:versionCode="@APK_VERSION_CODE@" android:installLocation="auto">
+<manifest package="ch.opengis.@APP_PACKAGE_NAME@" xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" android:versionName="@APP_VERSION_STR@">
 
   <!-- The permissions are specified manually. This way we do not request the microphone permissions which would be pulled in
        as dependent permissions because of qt multimedia. -->
@@ -32,7 +32,7 @@
   <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
       android:maxSdkVersion="28"
       />
-  @QFIELD_EXTRA_PERMISSIONS@
+   @SIGPACGO_EXTRA_PERMISSIONS@
 
   <uses-feature android:required="false" android:name="android.hardware.camera" />
   <uses-feature android:required="false" android:name="android.hardware.camera.autofocus" />
@@ -51,7 +51,7 @@
     android:requestLegacyExternalStorage="true"
     android:theme="@style/AppTheme">
     <activity
-      android:name="ch.opengis.@APP_PACKAGE_NAME@.QFieldActivity"
+      android:name="ch.opengis.@APP_PACKAGE_NAME@.SIGPACGoActivity"
       android:label="@APP_NAME@"
       android:icon="@AT@drawable/@APP_ICON@"
       android:launchMode="singleTask"
@@ -278,7 +278,7 @@
     <meta-data android:name="io.sentry.environment" android:value="@SENTRY_ENV@" />
     <meta-data android:name="io.sentry.auto-init" android:value="false" />
 
-    <service android:process=":qt_service" android:name="ch.opengis.@APP_PACKAGE_NAME@.QFieldCloudService">
+    <service android:process=":qt_service" android:name="ch.opengis.@APP_PACKAGE_NAME@.SIGPACGoCloudService">
       <meta-data android:name="android.app.arguments" android:value="--cloudservice"/>
       <meta-data android:name="android.app.lib_name" android:value="@string/lib_name"/>
       <meta-data android:name="android.app.repository" android:value="default"/>
@@ -295,7 +295,7 @@
       <meta-data android:name="android.app.background_running" android:value="true"/>
     </service>
 
-    <service android:process=":qt" android:name="ch.opengis.@APP_PACKAGE_NAME@.QFieldPositioningService" android:foregroundServiceType="location">
+    <service android:process=":qt" android:name="ch.opengis.@APP_PACKAGE_NAME@.SIGPACGoPositioningService" android:foregroundServiceType="location">
       <meta-data android:name="android.app.arguments" android:value="--positioningservice"/>
       <meta-data android:name="android.app.lib_name" android:value="@string/lib_name"/>
       <meta-data android:name="android.app.repository" android:value="default"/>

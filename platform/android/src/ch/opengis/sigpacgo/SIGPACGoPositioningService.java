@@ -1,5 +1,5 @@
 /**
- * QFieldPositioningService.java
+ * SIGPACGoPositioningService.java
  * @author  Mathieu Pellerin - <mathieu@opengis.ch>
  */
 /*
@@ -29,7 +29,7 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package ch.opengis.qfield;
+package ch.opengis.sigpacgo;
 
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -43,37 +43,37 @@ import android.os.Build;
 import android.util.Log;
 import org.qtproject.qt.android.bindings.QtService;
 
-public class QFieldPositioningService extends QtService {
+public class SIGPACGoPositioningService extends QtService {
 
     private NotificationManager notificationManager;
     private NotificationChannel notificationChannel;
 
-    private final String CHANNEL_ID = "qfield_service_02";
+    private final String CHANNEL_ID = "sigpacgo_service_02";
     private final int NOTIFICATION_ID = 102;
 
-    private static QFieldPositioningService instance = null;
-    public static QFieldPositioningService getInstance() {
+    private static SIGPACGoPositioningService instance = null;
+    public static SIGPACGoPositioningService getInstance() {
         return instance;
     }
 
-    public static void startQFieldPositioningService(Context context) {
-        Log.v("QFieldPositioningService", "Starting QFieldPositioningService");
-        Intent intent = new Intent(context, QFieldPositioningService.class);
+    public static void startSIGPACGoPositioningService(Context context) {
+        Log.v("SIGPACGoPositioningService", "Starting SIGPACGoPositioningService");
+        Intent intent = new Intent(context, SIGPACGoPositioningService.class);
         context.startForegroundService(intent);
     }
 
-    public static void stopQFieldPositioningService(Context context) {
-        Log.v("QFieldPositioningService", "Stopping QFieldPositioningService");
-        Intent intent = new Intent(context, QFieldPositioningService.class);
+    public static void stopSIGPACGoPositioningService(Context context) {
+        Log.v("SIGPACGoPositioningService", "Stopping SIGPACGoPositioningService");
+        Intent intent = new Intent(context, SIGPACGoPositioningService.class);
         context.stopService(intent);
     }
 
     public static void triggerShowNotification(String message,
-                                               boolean addCopyToClipboard) {
+                                            boolean addCopyToClipboard) {
         if (getInstance() != null) {
             getInstance().showNotification(message, addCopyToClipboard);
         } else {
-            Log.v("QFieldPositioningService",
+            Log.v("SIGPACGoPositioningService",
                   "Showing message failed, no instance available.");
         }
     }
@@ -82,7 +82,7 @@ public class QFieldPositioningService extends QtService {
         if (getInstance() != null) {
             getInstance().closeNotification();
         } else {
-            Log.v("QFieldPositioningService",
+            Log.v("SIGPACGoPositioningService",
                   "Closing message failed, no instance available.");
         }
     }

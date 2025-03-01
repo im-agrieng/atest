@@ -1,5 +1,5 @@
 /***************************************************************************
-                            QFieldUtils.java
+                            SIGPAC-GoUtils.java
                             -------------------
               begin                : December 6, 2020
               copyright            : (C) 2020 by Mathieu Pellerin
@@ -15,7 +15,7 @@
  *                                                                         *
  ***************************************************************************/
 
-package ch.opengis.qfield;
+package ch.opengis.sigpacgo;
 
 import android.content.ContentResolver;
 import android.content.ContentUris;
@@ -40,7 +40,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-public class QFieldUtils {
+public class SIGPACGoUtils {
 
     /**
      * Returns a modified string with attachment filename tags replaced with
@@ -75,7 +75,7 @@ public class QFieldUtils {
                 String entryName = entry.getName().toLowerCase();
                 if ((entryName.endsWith(".qgs") ||
                      entryName.endsWith(".qgz")) &&
-                    !entryName.contains(".qfieldsync")) {
+                    !entryName.contains(".sigpacgosync")) {
                     projectName = entry.getName();
                     break;
                 }
@@ -112,7 +112,7 @@ public class QFieldUtils {
                 String filePath = folder + file.getName();
                 try {
                     InputStream input = resolver.openInputStream(file.getUri());
-                    QFieldUtils.inputStreamToFile(input, filePath,
+                    SIGPAC-GoUtils.inputStreamToFile(input, filePath,
                                                   file.length());
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -168,7 +168,7 @@ public class QFieldUtils {
                     InputStream input = new FileInputStream(f);
                     OutputStream output =
                         resolver.openOutputStream(documentFile.getUri());
-                    QFieldUtils.inputStreamToOutputStream(input, output,
+                    SIGPAC-GoUtils.inputStreamToOutputStream(input, output,
                                                           f.length());
                     output.close();
                 } catch (Exception e) {
@@ -271,7 +271,7 @@ public class QFieldUtils {
             zip.close();
             return success;
         } catch (Exception e) {
-            Log.e("QField",
+            Log.e("SIGPAC-Go",
                   "inputStreamToOutputStream exception: " + e.getMessage());
         }
         return false;
@@ -316,7 +316,7 @@ public class QFieldUtils {
                     inputStreamToOutputStream(input, zip, file.length());
                     zip.closeEntry();
                 } catch (Exception e) {
-                    Log.e("QField", "inputStreamToOutputStream exception: " +
+                    Log.e("SIGPAC-Go", "inputStreamToOutputStream exception: " +
                                         e.getMessage());
                     return false;
                 }
@@ -355,7 +355,7 @@ public class QFieldUtils {
                 }
             }
         } catch (Exception e) {
-            Log.e("QField",
+            Log.e("SIGPAC-Go",
                   "inputStreamToOutputStream exception: " + e.getMessage());
             return false;
         }
@@ -394,7 +394,7 @@ public class QFieldUtils {
 
             out.close();
         } catch (Exception e) {
-            Log.e("QField", "inputStreamToFile exception: " + e.getMessage());
+            Log.e("SIGPAC-Go", "inputStreamToFile exception: " + e.getMessage());
             return false;
         }
         return true;
@@ -412,7 +412,7 @@ public class QFieldUtils {
             }
             out.close();
         } catch (Exception e) {
-            Log.e("QField", "copyFile exception: " + e.getMessage());
+            Log.e("SIGPAC-Go", "copyFile exception: " + e.getMessage());
             return false;
         }
         return true;

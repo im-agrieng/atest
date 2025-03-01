@@ -1,5 +1,5 @@
 /**
- * QFieldActivity.java - class needed to copy files from assets to
+ * SIGPACGoActivity.java - class needed to copy files from assets to
  * getExternalFilesDir() before starting QtActivity this can be used to perform
  * actions before QtActivity takes over.
  * @author  Marco Bernasocchi - <marco@opengis.ch>
@@ -31,7 +31,7 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package ch.opengis.qfield;
+package ch.opengis.sigpacgo;
 
 import android.Manifest;
 import android.app.Activity;
@@ -80,8 +80,8 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import androidx.documentfile.provider.DocumentFile;
-import ch.opengis.qfield.QFieldUtils;
-import ch.opengis.qfield.R;
+import ch.opengis.sigpacgo.SIGPACGoUtils;
+import ch.opengis.sigpacgo.R;
 import io.sentry.android.core.SentryAndroid;
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -101,7 +101,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.qtproject.qt.android.bindings.QtActivity;
 
-public class QFieldActivity extends QtActivity {
+public class SIGPACGoActivity extends QtActivity {
 
     private static final int IMPORT_DATASET = 300;
     private static final int IMPORT_PROJECT_FOLDER = 301;
@@ -165,7 +165,7 @@ public class QFieldActivity extends QtActivity {
         if (handleVolumeKeys && (keyCode == KeyEvent.KEYCODE_VOLUME_UP ||
                                  keyCode == KeyEvent.KEYCODE_VOLUME_DOWN ||
                                  keyCode == KeyEvent.KEYCODE_MUTE)) {
-            // Forward volume keys' presses to QField
+            // Forward volume keys' presses to SIGPACGo
             volumeKeyDown(keyCode);
             return true;
         }
@@ -177,7 +177,7 @@ public class QFieldActivity extends QtActivity {
         if (handleVolumeKeys && (keyCode == KeyEvent.KEYCODE_VOLUME_UP ||
                                  keyCode == KeyEvent.KEYCODE_VOLUME_DOWN ||
                                  keyCode == KeyEvent.KEYCODE_MUTE)) {
-            // Forward volume keys's releases to QField
+            // Forward volume keys's releases to SIGPACGo
             volumeKeyUp(keyCode);
             return true;
         }
@@ -222,7 +222,7 @@ public class QFieldActivity extends QtActivity {
                     uri = projectIntent.getData();
                 }
 
-                String filePath = QFieldUtils.getPathFromUri(context, uri);
+                String filePath = SIGPACGoUtils.getPathFromUri(context, uri);
                 String importDatasetPath = "";
                 String importProjectPath = "";
                 File externalFilesDir = getExternalFilesDir(null);
@@ -249,7 +249,7 @@ public class QFieldActivity extends QtActivity {
                                 new SimpleDateFormat("yyyyMMdd_HHmmss")
                                     .format(new Date().getTime()) +
                                 "." +
-                                QFieldUtils.getExtensionFromMimeType(type);
+                                SIGPACGoUtils.getExtensionFromMimeType(type);
                         }
                     }
 
@@ -270,7 +270,7 @@ public class QFieldActivity extends QtActivity {
                                 InputStream input =
                                     resolver.openInputStream(uri);
                                 projectName =
-                                    QFieldUtils.getArchiveProjectName(input);
+                                    SIGPACGoUtils.getArchiveProjectName(input);
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
@@ -288,11 +288,11 @@ public class QFieldActivity extends QtActivity {
                                 try {
                                     InputStream input =
                                         resolver.openInputStream(uri);
-                                    QFieldUtils.zipToFolder(input, projectPath);
+                                    SIGPACGoUtils.zipToFolder(input, projectPath);
                                 } catch (Exception e) {
                                     e.printStackTrace();
                                 }
-                                Log.v("QField",
+                                Log.v("SIGPAC-Go",
                                       "Opening decompressed project: " +
                                           projectPath + projectName);
                                 dismissBlockingProgressDialog();
@@ -305,7 +305,7 @@ public class QFieldActivity extends QtActivity {
                                                ? new File(filePath).canWrite()
                                                : false;
                         if (!canWrite) {
-                            Log.v("QField",
+                            Log.v("SIGPAC-Go",
                                   "Content intent detected: " + action + " : " +
                                       projectIntent.getDataString() + " : " +
                                       type + " : " + fileName);
@@ -318,13 +318,13 @@ public class QFieldActivity extends QtActivity {
                                                  fileExtension;
                                 i++;
                             }
-                            Log.v("QField",
+                            Log.v("SIGPAC-Go",
                                   "Importing document to file path: " +
                                       importFilePath);
                             try {
                                 InputStream input =
                                     resolver.openInputStream(uri);
-                                QFieldUtils.inputStreamToFile(
+                                SIGPACGoUtils.inputStreamToFile(
                                     input, importFilePath, fileBytes);
                             } catch (Exception e) {
                                 e.printStackTrace();
@@ -336,7 +336,7 @@ public class QFieldActivity extends QtActivity {
                     }
                 }
 
-                Log.v("QField", "Opening document file path: " + filePath);
+                Log.v("SIGPAC-Go", "Opening document file path: " + filePath);
                 dismissBlockingProgressDialog();
                 openProject(filePath);
             }
@@ -428,7 +428,7 @@ public class QFieldActivity extends QtActivity {
             public void run() {
                 AlertDialog alertDialog =
                     new AlertDialog
-                        .Builder(QFieldActivity.this, R.style.DialogTheme)
+                        .Builder(SIGPACGoActivity.this, R.style.DialogTheme)
                         .create();
                 alertDialog.setTitle(title);
                 alertDialog.setMessage(message);
@@ -457,7 +457,7 @@ public class QFieldActivity extends QtActivity {
 
     private void prepareQtActivity() {
         sharedPreferences =
-            getSharedPreferences("QField", Context.MODE_PRIVATE);
+            getSharedPreferences("SIGPAC-Go", Context.MODE_PRIVATE);
         sharedPreferenceEditor = sharedPreferences.edit();
 
         checkAllFileAccess(); // Storage access permission handling for Android
@@ -472,8 +472,8 @@ public class QFieldActivity extends QtActivity {
             new File(dataDir + "Imported Datasets/").mkdir();
             new File(dataDir + "Imported Projects/").mkdir();
 
-            dataDir = dataDir + "QField/";
-            // create QField directories
+            dataDir = dataDir + "SIGPAC-Go/";
+            // create SIGPACGo directories
             new File(dataDir).mkdir();
             new File(dataDir + "basemaps/").mkdir();
             new File(dataDir + "fonts/").mkdir();
@@ -487,7 +487,7 @@ public class QFieldActivity extends QtActivity {
 
         String storagePath =
             Environment.getExternalStorageDirectory().getAbsolutePath();
-        String rootDataDir = storagePath + "/QField/";
+        String rootDataDir = storagePath + "SIGPAC-Go";
         File storageFile = new File(rootDataDir);
         storageFile.mkdir();
         if (storageFile.canWrite()) {
@@ -510,8 +510,8 @@ public class QFieldActivity extends QtActivity {
                     continue;
                 }
 
-                // create QField directories
-                String dataDir = file.getAbsolutePath() + "/QField/";
+                // create SIGPACGo directories
+                String dataDir = file.getAbsolutePath() + "SIGPAC-Go";
                 new File(dataDir + "basemaps/").mkdirs();
                 new File(dataDir + "fonts/").mkdirs();
                 new File(dataDir + "proj/").mkdirs();
@@ -523,7 +523,7 @@ public class QFieldActivity extends QtActivity {
         }
 
         Intent intent = new Intent();
-        intent.setClass(QFieldActivity.this, QtActivity.class);
+        intent.setClass(SIGPACGoActivity.this, QtActivity.class);
         try {
             ActivityInfo activityInfo = getPackageManager().getActivityInfo(
                 getComponentName(), PackageManager.GET_META_DATA);
@@ -540,7 +540,7 @@ public class QFieldActivity extends QtActivity {
             appDataDirs.append(dataDir);
             appDataDirs.append("--;--");
         }
-        intent.putExtra("QFIELD_APP_DATA_DIRS", appDataDirs.toString());
+        intent.putExtra("SIGPAC-Go_APP_DATA_DIRS", appDataDirs.toString());
 
         Intent sourceIntent = getIntent();
         if (sourceIntent.getAction() == Intent.ACTION_VIEW ||
@@ -564,7 +564,7 @@ public class QFieldActivity extends QtActivity {
 
         File externalStorageDirectory = null;
         if (ContextCompat.checkSelfPermission(
-                QFieldActivity.this,
+                SIGPACGoActivity.this,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE) ==
                 PackageManager.PERMISSION_GRANTED ||
             (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
@@ -608,7 +608,7 @@ public class QFieldActivity extends QtActivity {
 
         File externalStorageDirectory = null;
         if (ContextCompat.checkSelfPermission(
-                QFieldActivity.this,
+                SIGPACGoActivity.this,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE) ==
                 PackageManager.PERMISSION_GRANTED ||
             (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
@@ -642,7 +642,7 @@ public class QFieldActivity extends QtActivity {
             displayAlertDialog(
                 getString(R.string.operation_unsupported),
                 getString(R.string.import_operation_unsupported));
-            Log.w("QField", "No activity found for ACTION_OPEN_DOCUMENT.");
+            Log.w("SIGPAC-Go", "No activity found for ACTION_OPEN_DOCUMENT.");
         }
         return;
     }
@@ -659,7 +659,7 @@ public class QFieldActivity extends QtActivity {
             displayAlertDialog(
                 getString(R.string.operation_unsupported),
                 getString(R.string.import_operation_unsupported));
-            Log.w("QField", "No activity found for ACTION_OPEN_DOCUMENT_TREE.");
+            Log.w("SIGPAC-Go", "No activity found for ACTION_OPEN_DOCUMENT_TREE.");
         }
         return;
     }
@@ -677,7 +677,7 @@ public class QFieldActivity extends QtActivity {
             displayAlertDialog(
                 getString(R.string.operation_unsupported),
                 getString(R.string.import_operation_unsupported));
-            Log.w("QField", "No activity found for ACTION_OPEN_DOCUMENT.");
+            Log.w("SIGPAC-Go", "No activity found for ACTION_OPEN_DOCUMENT.");
         }
         return;
     }
@@ -696,7 +696,7 @@ public class QFieldActivity extends QtActivity {
             displayAlertDialog(
                 getString(R.string.operation_unsupported),
                 getString(R.string.import_operation_unsupported));
-            Log.w("QField", "No activity found for ACTION_OPEN_DOCUMENT.");
+            Log.w("SIGPAC-Go", "No activity found for ACTION_OPEN_DOCUMENT.");
         }
         return;
     }
@@ -719,7 +719,7 @@ public class QFieldActivity extends QtActivity {
                         OutputStream out =
                             new FileOutputStream(file.getAbsolutePath());
                         boolean success =
-                            QFieldUtils.filesToZip(out, filePaths);
+                            SIGPACGoUtils.filesToZip(out, filePaths);
                         out.close();
                         if (!success) {
                             return;
@@ -762,7 +762,7 @@ public class QFieldActivity extends QtActivity {
             displayAlertDialog(
                 getString(R.string.operation_unsupported),
                 getString(R.string.export_operation_unsupported));
-            Log.w("QField", "No activity found for ACTION_OPEN_DOCUMENT_TREE.");
+            Log.w("SIGPAC-Go", "No activity found for ACTION_OPEN_DOCUMENT_TREE.");
         }
         return;
     }
@@ -804,7 +804,7 @@ public class QFieldActivity extends QtActivity {
                 File file = new File(path);
                 File temporaryFile =
                     new File(getCacheDir(), file.getName() + ".zip");
-                QFieldUtils.folderToZip(file.getPath(),
+                SIGPACGoUtils.folderToZip(file.getPath(),
                                         temporaryFile.getPath());
                 dismissBlockingProgressDialog();
 
@@ -835,7 +835,7 @@ public class QFieldActivity extends QtActivity {
             getString(R.string.delete_confirm),
             new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int id) {
-                    QFieldUtils.deleteDirectory(file, true);
+                    SIGPACGoUtils.deleteDirectory(file, true);
                     dialog.dismiss();
                     openPath(file.getParentFile().getAbsolutePath());
                 }
@@ -861,12 +861,12 @@ public class QFieldActivity extends QtActivity {
 
         String timeStamp =
             new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-        resourceTempFilePath = "QFieldCamera" + timeStamp;
+        resourceTempFilePath = "SIGPAC-GoCamera" + timeStamp;
 
         Intent intent = isVideo ? new Intent(MediaStore.ACTION_VIDEO_CAPTURE)
                                 : new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         if (intent.resolveActivity(getPackageManager()) != null) {
-            Log.d("QField", "Camera intent resolved");
+            Log.d("SIGPAC-Go", "Camera intent resolved");
             File storageDir =
                 getExternalFilesDir(Environment.DIRECTORY_PICTURES);
             try {
@@ -874,30 +874,30 @@ public class QFieldActivity extends QtActivity {
                                                     suffix, storageDir);
 
                 if (tempFile != null) {
-                    Log.d("QField", "Temporary camera file created");
+                    Log.d("SIGPAC-Go", "Temporary camera file created");
                     if (tempFile.exists()) {
                         Log.d(
-                            "QField",
+                            "SIGPAC-Go",
                             "Temporary camera file exists already, it will be overwritten");
                     }
 
                     resourceTempFilePath = tempFile.getAbsolutePath();
 
                     Uri fileURI = FileProvider.getUriForFile(
-                        this, "ch.opengis.qfield.fileprovider", tempFile);
+                        this, "ch.opengis.sigpacgo.fileprovider", tempFile);
 
-                    Log.d("QField",
+                    Log.d("SIGPAC-Go",
                           "Camera temporary file uri: " + fileURI.toString());
                     intent.putExtra(MediaStore.EXTRA_OUTPUT, fileURI);
-                    Log.d("QField", "Camera intent starting");
+                    Log.d("SIGPAC-Go", "Camera intent starting");
                     startActivityForResult(intent, CAMERA_RESOURCE);
                 }
             } catch (IOException e) {
-                Log.d("QField", e.getMessage());
+                Log.d("SIGPAC-Go", e.getMessage());
                 resourceCanceled("");
             }
         } else {
-            Log.d("QField", "Could not resolve camera intent");
+            Log.d("SIGPAC-Go", "Could not resolve camera intent");
             resourceCanceled("");
         }
         return;
@@ -910,7 +910,7 @@ public class QFieldActivity extends QtActivity {
 
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
         intent.setType(mimeType);
-        Log.d("QField", "Gallery intent starting");
+        Log.d("SIGPAC-Go", "Gallery intent starting");
         startActivityForResult(intent, GALLERY_RESOURCE);
         return;
     }
@@ -927,7 +927,7 @@ public class QFieldActivity extends QtActivity {
         intent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
         intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, false);
         intent.setType(mimeType);
-        Log.d("QField", "File picker intent starting");
+        Log.d("SIGPAC-Go", "File picker intent starting");
         startActivityForResult(intent, FILE_PICKER_RESOURCE);
         return;
     }
@@ -941,11 +941,11 @@ public class QFieldActivity extends QtActivity {
         resourceCacheFile = new File(getCacheDir(), resourceFile.getName());
 
         // Copy resource to a temporary file
-        if (QFieldUtils.copyFile(resourceFile, resourceCacheFile)) {
+        if (SIGPACGoUtils.copyFile(resourceFile, resourceCacheFile)) {
             Uri contentUri = Build.VERSION.SDK_INT < 24
                                  ? Uri.fromFile(resourceFile)
                                  : FileProvider.getUriForFile(
-                                       this, "ch.opengis.qfield.fileprovider",
+                                       this, "ch.opengis.sigpac-go.fileprovider",
                                        resourceCacheFile);
 
             Intent intent =
@@ -964,13 +964,13 @@ public class QFieldActivity extends QtActivity {
                 intent.setDataAndType(contentUri, mimeType);
             }
             try {
-                Log.d("QField", "Open intent starting");
+                Log.d("SIGPAC-Go", "Open intent starting");
                 startActivityForResult(intent, OPEN_RESOURCE);
             } catch (IllegalArgumentException e) {
-                Log.d("QField", e.getMessage());
+                Log.d("SIGPAC-Go", e.getMessage());
                 resourceCanceled("");
             } catch (Exception e) {
-                Log.d("QField", e.getMessage());
+                Log.d("SIGPAC-Go", e.getMessage());
                 resourceCanceled("");
             }
         } else {
@@ -1012,7 +1012,7 @@ public class QFieldActivity extends QtActivity {
                     try {
                         InputStream input =
                             resolver.openInputStream(datasetUri);
-                        imported = QFieldUtils.inputStreamToFile(
+                        imported = SIGPACGoUtils.inputStreamToFile(
                             input, importFilePath, documentFile.length());
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -1065,7 +1065,7 @@ public class QFieldActivity extends QtActivity {
                 String importPath =
                     importProjectPath + directory.getName() + "/";
                 new File(importPath).mkdir();
-                boolean imported = QFieldUtils.documentFileToFolder(
+                boolean imported = SIGPACGoUtils.documentFileToFolder(
                     directory, importPath, resolver);
 
                 progressDialog.dismiss();
@@ -1111,7 +1111,7 @@ public class QFieldActivity extends QtActivity {
                 String projectName = "";
                 try {
                     InputStream input = resolver.openInputStream(archiveUri);
-                    projectName = QFieldUtils.getArchiveProjectName(input);
+                    projectName = SIGPACGoUtils.getArchiveProjectName(input);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -1127,7 +1127,7 @@ public class QFieldActivity extends QtActivity {
                     try {
                         InputStream input =
                             resolver.openInputStream(archiveUri);
-                        imported = QFieldUtils.zipToFolder(input, importPath);
+                        imported = SIGPACGoUtils.zipToFolder(input, importPath);
                     } catch (Exception e) {
                         e.printStackTrace();
 
@@ -1178,7 +1178,7 @@ public class QFieldActivity extends QtActivity {
                 boolean imported = false;
                 try {
                     InputStream input = resolver.openInputStream(archiveUri);
-                    imported = QFieldUtils.zipToFolder(input, projectFolder);
+                    imported = SIGPACGoUtils.zipToFolder(input, projectFolder);
                 } catch (Exception e) {
                     e.printStackTrace();
 
@@ -1201,27 +1201,27 @@ public class QFieldActivity extends QtActivity {
     private void checkStoragePermissions() {
         List<String> permissionsList = new ArrayList<String>();
         if (ContextCompat.checkSelfPermission(
-                QFieldActivity.this,
+                SIGPACGoActivity.this,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE) ==
             PackageManager.PERMISSION_DENIED) {
             permissionsList.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(
-                    QFieldActivity.this,
+                    SIGPACGoActivity.this,
                     Manifest.permission.READ_MEDIA_IMAGES) ==
                 PackageManager.PERMISSION_DENIED) {
                 permissionsList.add(Manifest.permission.READ_MEDIA_IMAGES);
             }
             if (ContextCompat.checkSelfPermission(
-                    QFieldActivity.this,
+                    SIGPACGoActivity.this,
                     Manifest.permission.READ_MEDIA_VIDEO) ==
                 PackageManager.PERMISSION_DENIED) {
                 permissionsList.add(Manifest.permission.READ_MEDIA_VIDEO);
             }
         }
         if (ContextCompat.checkSelfPermission(
-                QFieldActivity.this,
+                SIGPACGoActivity.this,
                 Manifest.permission.ACCESS_MEDIA_LOCATION) ==
             PackageManager.PERMISSION_DENIED) {
             permissionsList.add(Manifest.permission.ACCESS_MEDIA_LOCATION);
@@ -1229,7 +1229,7 @@ public class QFieldActivity extends QtActivity {
         if (permissionsList.size() > 0) {
             String[] permissions = new String[permissionsList.size()];
             permissionsList.toArray(permissions);
-            ActivityCompat.requestPermissions(QFieldActivity.this, permissions,
+            ActivityCompat.requestPermissions(SIGPACGoActivity.this, permissions,
                                               101);
         }
     }
@@ -1272,7 +1272,7 @@ public class QFieldActivity extends QtActivity {
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         try {
-                            Uri uri = Uri.parse("package:ch.opengis.qfield");
+                            Uri uri = Uri.parse("package:ch.opengis.sigpac-go");
                             Intent intent = new Intent(
                                 Settings
                                     .ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
@@ -1280,7 +1280,7 @@ public class QFieldActivity extends QtActivity {
                             startActivity(intent);
                         } catch (Exception e) {
                             Log.e(
-                                "QField",
+                                "SIGPAC-Go",
                                 "Failed to initial activity to grant all files access",
                                 e);
                         }
@@ -1318,14 +1318,14 @@ public class QFieldActivity extends QtActivity {
         if (requestCode == CAMERA_RESOURCE) {
             if (resultCode == RESULT_OK) {
                 File file = new File(resourceTempFilePath);
-                String finalFilePath = QFieldUtils.replaceFilenameTags(
+                String finalFilePath = SIGPACGoUtils.replaceFilenameTags(
                     resourceFilePath, file.getName());
                 File result = new File(resourcePrefix + finalFilePath);
-                Log.d("QField",
+                Log.d("SIGPAC-Go",
                       "Taken camera picture: " + file.getAbsolutePath());
                 try {
                     InputStream in = new FileInputStream(file);
-                    QFieldUtils.inputStreamToFile(in, result.getPath(),
+                    SIGPACGoUtils.inputStreamToFile(in, result.getPath(),
                                                   file.length());
                     file.delete();
                 } catch (Exception e) {
@@ -1348,17 +1348,17 @@ public class QFieldActivity extends QtActivity {
                 Uri uri = data.getData();
                 DocumentFile documentFile = DocumentFile.fromSingleUri(
                     getApplication().getApplicationContext(), uri);
-                String finalFilePath = QFieldUtils.replaceFilenameTags(
+                String finalFilePath = SIGPACGoUtils.replaceFilenameTags(
                     resourceFilePath, documentFile.getName());
                 File result = new File(resourcePrefix + finalFilePath);
-                Log.d("QField",
+                Log.d("SIGPAC-Go",
                       "Selected gallery file: " + data.getData().toString());
                 try {
                     InputStream in = getContentResolver().openInputStream(uri);
-                    QFieldUtils.inputStreamToFile(in, result.getPath(),
+                    SIGPACGoUtils.inputStreamToFile(in, result.getPath(),
                                                   documentFile.length());
                 } catch (Exception e) {
-                    Log.d("QField", e.getMessage());
+                    Log.d("SIGPAC-Go", e.getMessage());
                 }
 
                 // Let the android scan new media folders/files to make them
@@ -1377,17 +1377,17 @@ public class QFieldActivity extends QtActivity {
                 Uri uri = data.getData();
                 DocumentFile documentFile = DocumentFile.fromSingleUri(
                     getApplication().getApplicationContext(), uri);
-                String finalFilePath = QFieldUtils.replaceFilenameTags(
+                String finalFilePath = SIGPACGoUtils.replaceFilenameTags(
                     resourceFilePath, documentFile.getName());
                 File result = new File(resourcePrefix + finalFilePath);
-                Log.d("QField", "Selected file picker file: " +
+                Log.d("SIGPAC-Go", "Selected file picker file: " +
                                     data.getData().toString());
                 try {
                     InputStream in = getContentResolver().openInputStream(uri);
-                    QFieldUtils.inputStreamToFile(in, result.getPath(),
+                    SIGPACGoUtils.inputStreamToFile(in, result.getPath(),
                                                   documentFile.length());
                 } catch (Exception e) {
-                    Log.d("QField", e.getMessage());
+                    Log.d("SIGPAC-Go", e.getMessage());
                 }
 
                 resourceReceived(finalFilePath);
@@ -1399,7 +1399,7 @@ public class QFieldActivity extends QtActivity {
                 try {
                     if (resourceIsEditing) {
                         Log.d(
-                            "QField",
+                            "SIGPAC-Go",
                             "Copy file back from uri " + data.getDataString() +
                                 " to file: " + resourceFile.getAbsolutePath());
                         InputStream in = getContentResolver().openInputStream(
@@ -1424,7 +1424,7 @@ public class QFieldActivity extends QtActivity {
             }
         } else if (requestCode == IMPORT_DATASET &&
                    resultCode == Activity.RESULT_OK) {
-            Log.d("QField", "handling import dataset(s)");
+            Log.d("SIGPAC-Go", "handling import dataset(s)");
             File externalFilesDir = getExternalFilesDir(null);
             if (externalFilesDir == null || data == null) {
                 return;
@@ -1490,7 +1490,7 @@ public class QFieldActivity extends QtActivity {
             }
         } else if (requestCode == IMPORT_PROJECT_FOLDER &&
                    resultCode == Activity.RESULT_OK) {
-            Log.d("QField", "handling import project folder");
+            Log.d("SIGPAC-Go", "handling import project folder");
             File externalFilesDir = getExternalFilesDir(null);
             if (externalFilesDir == null || data == null) {
                 return;
@@ -1530,7 +1530,7 @@ public class QFieldActivity extends QtActivity {
             }
         } else if (requestCode == IMPORT_PROJECT_ARCHIVE &&
                    resultCode == Activity.RESULT_OK) {
-            Log.d("QField", "handling import project archive");
+            Log.d("SIGPAC-Go", "handling import project archive");
             File externalFilesDir = getExternalFilesDir(null);
             if (externalFilesDir == null || data == null) {
                 return;
@@ -1579,7 +1579,7 @@ public class QFieldActivity extends QtActivity {
             }
         } else if (requestCode == UPDATE_PROJECT_FROM_ARCHIVE &&
                    resultCode == Activity.RESULT_OK) {
-            Log.d("QField", "handling updating project from archive");
+            Log.d("SIGPAC-Go", "handling updating project from archive");
             File externalFilesDir = getExternalFilesDir(null);
             if (externalFilesDir == null || data == null) {
                 return;
@@ -1595,7 +1595,7 @@ public class QFieldActivity extends QtActivity {
             updateProjectFromArchive(uri);
         } else if (requestCode == EXPORT_TO_FOLDER &&
                    resultCode == Activity.RESULT_OK) {
-            Log.d("QField", "handling export to folder");
+            Log.d("SIGPAC-Go", "handling export to folder");
 
             String[] paths = pathsToExport.split("--;--");
             Uri uri = data.getData();
@@ -1614,7 +1614,7 @@ public class QFieldActivity extends QtActivity {
                     boolean exported = true;
                     for (String path : paths) {
                         File file = new File(path);
-                        exported = QFieldUtils.fileToDocumentFile(
+                        exported = SIGPACGoUtils.fileToDocumentFile(
                             file, directory, resolver);
                         if (!exported) {
                             break;
