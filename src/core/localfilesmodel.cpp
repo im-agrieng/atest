@@ -61,7 +61,6 @@ QHash<int, QByteArray> LocalFilesModel::roleNames() const
   roles[ItemHasThumbnailRole] = "ItemHasThumbnail";
   roles[ItemIsFavoriteRole] = "ItemIsFavorite";
   roles[ItemHasWebdavConfigurationRole] = "ItemHasWebdavConfiguration";
-  roles[ItemCheckedRole] = "ItemChecked";
   return roles;
 }
 
@@ -316,69 +315,38 @@ QVariant LocalFilesModel::data( const QModelIndex &index, int role ) const
   if ( index.row() >= mItems.size() || index.row() < 0 )
     return QVariant();
 
-  const Item &item = mItems[index.row()];
-
   switch ( static_cast<Role>( role ) )
   {
     case ItemMetaTypeRole:
-      return item.metaType;
+      return mItems[index.row()].metaType;
 
     case ItemTypeRole:
-      return item.type;
+      return mItems[index.row()].type;
 
     case ItemTitleRole:
-      return item.title;
+      return mItems[index.row()].title;
 
     case ItemFormatRole:
-      return item.format;
+      return mItems[index.row()].format;
 
     case ItemPathRole:
-      return item.path;
+      return mItems[index.row()].path;
 
     case ItemSizeRole:
-      return item.size;
+      return mItems[index.row()].size;
 
     case ItemHasThumbnailRole:
-      return item.size < 25000000 && SUPPORTED_DATASET_THUMBNAIL.contains( item.format );
+      return mItems[index.row()].size < 25000000
+             && SUPPORTED_DATASET_THUMBNAIL.contains( mItems[index.row()].format );
 
     case ItemIsFavoriteRole:
-      return mFavorites.contains( item.path );
+      return mFavorites.contains( mItems[index.row()].path );
 
     case ItemHasWebdavConfigurationRole:
-      return WebdavConnection::hasWebdavConfiguration( item.path );
-
-    case ItemCheckedRole:
-      return item.checked;
+    {
+      return WebdavConnection::hasWebdavConfiguration( mItems[index.row()].path );
+    }
   }
 
   return QVariant();
-}
-
-bool LocalFilesModel::inSelectionMode()
-{
-  if ( currentTitle() == QStringLiteral( "Home" ) )
-    return false;
-
-  return std::any_of( mItems.begin(), mItems.end(), []( const Item &item ) { return item.checked; } );
-}
-
-void LocalFilesModel::setChecked( const int &mIdx, const bool &checked )
-{
-  if ( mItems[mIdx].checked != checked )
-  {
-    mItems[mIdx].checked = checked;
-
-    emit inSelectionModeChanged();
-    emit dataChanged( index( 0, 0, QModelIndex() ), index( mItems.size() - 1, 0, QModelIndex() ), { ItemCheckedRole } );
-  }
-}
-
-void LocalFilesModel::clearSelection()
-{
-  for ( Item &item : mItems )
-  {
-    item.checked = false;
-  }
-  emit inSelectionModeChanged();
-  emit dataChanged( index( 0, 0, QModelIndex() ), index( mItems.size() - 1, 0, QModelIndex() ), { ItemCheckedRole } );
 }
