@@ -30,6 +30,7 @@ Item {
   property alias isRendering: mapCanvasWrapper.isRendering
   property alias incrementalRendering: mapCanvasWrapper.incrementalRendering
   property alias quality: mapCanvasWrapper.quality
+  property alias previewJobsEnabled: mapCanvasWrapper.previewJobsEnabled
   property alias forceDeferredLayersRepaint: mapCanvasWrapper.forceDeferredLayersRepaint
 
   property bool interactive: true
@@ -84,6 +85,10 @@ Item {
 
   function zoomOut(point) {
     mapCanvasWrapper.zoom(point, 1.5);
+  }
+
+  function stopRendering() {
+    mapCanvasWrapper.stopRendering();
   }
 
   MapCanvasMap {

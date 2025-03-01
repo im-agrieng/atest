@@ -27,6 +27,7 @@
 #include <memory>
 
 class QgsMapRendererParallelJob;
+class QgsMapRendererQImageJob;
 class QgsMapRendererCache;
 class QgsLabelingResults;
 
@@ -108,6 +109,14 @@ class QgsQuickMapCanvasMap : public QQuickItem
      */
     Q_PROPERTY( double forceDeferredLayersRepaint READ forceDeferredLayersRepaint WRITE setForceDeferredLayersRepaint NOTIFY forceDeferredLayersRepaintChanged )
 
+    /**
+     * When previewJobsEnabled is set to true, canvas map preview jobs (low priority
+     * render jobs which render portions of the view just outside of the canvas
+     * extent, to allow preview of these out-of-canvas areas when panning or zooming out
+     * the map) while be rendered.
+     */
+    Q_PROPERTY( bool previewJobsEnabled READ previewJobsEnabled WRITE setPreviewJobsEnabled NOTIFY previewJobsEnabledChanged )
+
   public:
     //! Create map canvas map
     explicit QgsQuickMapCanvasMap( QQuickItem *parent = nullptr );
@@ -163,6 +172,12 @@ class QgsQuickMapCanvasMap : public QQuickItem
     //!\copydoc QgsQuickMapCanvasMap::rightMargin
     void setRightMargin( double rightMargin );
 
+    //!\copydoc QgsQuickMapCanvasMap::previewJobsEnabled
+    bool previewJobsEnabled() const;
+
+    //!\copydoc QgsQuickMapCanvasMap::previewJobsEnabled
+    void setPreviewJobsEnabled( bool enabled );
+
     /**
      * Returns an image of the last successful map canvas rendering
      */
@@ -204,6 +219,9 @@ class QgsQuickMapCanvasMap : public QQuickItem
     //!\copydoc QgsQuickMapCanvasMap::rightMargin
     void rightMarginChanged();
 
+    //!\copydoc QgsQuickMapCanvasMap::previewJobsEnabled
+    bool previewJobsEnabledChanged() const;
+
   protected:
     void geometryChange( const QRectF &newGeometry, const QRectF &oldGeometry ) override;
 
@@ -232,11 +250,18 @@ class QgsQuickMapCanvasMap : public QQuickItem
      */
     void refresh();
 
+    void startPreviewJobs();
+    void stopPreviewJobs();
+    void schedulePreviewJob( int number );
+
   private slots:
     void refreshMap();
     void renderJobUpdated();
     void renderJobFinished();
     void layerRepaintRequested( bool deferred );
+    void startPreviewJob( int number );
+    void previewJobFinished();
+
     void onWindowChanged( QQuickWindow *window );
     void onScreenChanged( QScreen *screen );
     void onExtentChanged();
@@ -272,6 +297,14 @@ class QgsQuickMapCanvasMap : public QQuickItem
     bool mDeferredRefreshPending = false;
     double mQuality = 1.0;
     bool mForceDeferredLayersRepaint = false;
+
+    QHash<QString, int> mLastLayerRenderTime;
+
+    bool mPreviewJobsEnabled = false;
+    QList<QgsMapRendererQImageJob *> mPreviewJobs;
+    QTimer mPreviewTimer;
+    QMetaObject::Connection mPreviewTimerConnection;
+    QMap<int, QImage> mPreviewImages;
 
     QQuickWindow *mWindow = nullptr;
 };
