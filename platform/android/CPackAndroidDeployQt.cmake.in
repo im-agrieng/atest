@@ -30,7 +30,7 @@ else()
   execute_process(
     COMMAND
       "@ANDROIDDEPLOYQT_EXECUTABLE@"
-      --input @CMAKE_BINARY_DIR@/src/app/android-qfield-deployment-settings.json
+      --input @CMAKE_BINARY_DIR@/src/app/android-sigpacgo-deployment-settings.json
       --output @CMAKE_BINARY_DIR@/src/app/android-build
       --deployment bundled
       --android-platform android-@ANDROID_TARGET_PLATFORM@

@@ -1,5 +1,5 @@
 /***************************************************************************
-                            platformutilities.cpp  -  utilities for qfield
+                            platformutilities.cpp  -  utilities for sigpac-go
 
                               -------------------
               begin                : Wed Dec 04 10:48:28 CET 2015
@@ -95,21 +95,22 @@ void PlatformUtilities::initSystem()
 
 void PlatformUtilities::afterUpdate()
 {
-  const QStringList dirs = appDataDirs();
-  for ( const QString &dir : dirs )
-  {
-    QDir appDataDir( dir );
-    appDataDir.mkpath( QStringLiteral( "proj" ) );
-    appDataDir.mkpath( QStringLiteral( "auth" ) );
-    appDataDir.mkpath( QStringLiteral( "fonts" ) );
-    appDataDir.mkpath( QStringLiteral( "basemaps" ) );
-    appDataDir.mkpath( QStringLiteral( "logs" ) );
-    appDataDir.mkpath( QStringLiteral( "plugins" ) );
-  }
+    const QStringList dirs = appDataDirs();
+    for ( const QString &dir : dirs )
+    {
+        QDir appDataDir( dir );
+        // These directories are still needed for shared functionality
+        appDataDir.mkpath( QStringLiteral( "proj" ) );
+        appDataDir.mkpath( QStringLiteral( "auth" ) );
+        appDataDir.mkpath( QStringLiteral( "fonts" ) );
+        appDataDir.mkpath( QStringLiteral( "basemaps" ) );
+        appDataDir.mkpath( QStringLiteral( "logs" ) );
+        appDataDir.mkpath( QStringLiteral( "plugins" ) );
+    }
 
-  QDir applicationDir( applicationDirectory() );
-  applicationDir.mkpath( QStringLiteral( "Imported Projects" ) );
-  applicationDir.mkpath( QStringLiteral( "Imported Datasets" ) );
+    QDir applicationDir( applicationDirectory() );
+    applicationDir.mkpath( QStringLiteral( "Imported Projects" ) );
+    applicationDir.mkpath( QStringLiteral( "Imported Datasets" ) );
 }
 
 QString PlatformUtilities::systemSharedDataLocation() const
@@ -134,7 +135,7 @@ QString PlatformUtilities::systemSharedDataLocation() const
   const static QString sharePath = QDir( QFileInfo( !QCoreApplication::applicationFilePath().isEmpty() ? QCoreApplication::applicationFilePath() : QCoreApplication::arguments().value( 0 ) ).canonicalPath()
                                          + QLatin1String( "/../share" ) )
                                      .absolutePath();
-  const static QString environmentSharePath = QString( qgetenv( "QFIELD_SYSTEM_SHARED_DATA_PATH" ) );
+  const static QString environmentSharePath = QString( qgetenv( "SIGPACGO_SYSTEM_SHARED_DATA_PATH" ) );
   return !environmentSharePath.isEmpty() ? QDir( environmentSharePath ).absolutePath() : sharePath;
 }
 
@@ -158,7 +159,8 @@ void PlatformUtilities::loadQgsProject() const
 
 QStringList PlatformUtilities::appDataDirs() const
 {
-  return QStringList() << QStandardPaths::standardLocations( QStandardPaths::DocumentsLocation ).first() + QStringLiteral( "/QField Documents/QField/" );
+    return QStringList() << QStandardPaths::standardLocations( QStandardPaths::DocumentsLocation ).first() + 
+           QStringLiteral( "/SIGPAC-Go Documents/SIGPAC-Go/" );
 }
 
 QStringList PlatformUtilities::availableGrids() const
@@ -213,7 +215,8 @@ bool PlatformUtilities::renameFile( const QString &oldFilePath, const QString &n
 
 QString PlatformUtilities::applicationDirectory() const
 {
-  return QStandardPaths::standardLocations( QStandardPaths::DocumentsLocation ).first() + QStringLiteral( "/QField Documents/" );
+    return QStandardPaths::standardLocations( QStandardPaths::DocumentsLocation ).first() + 
+           QStringLiteral( "/SIGPAC-Go Documents/" );
 }
 
 QStringList PlatformUtilities::additionalApplicationDirectories() const
@@ -354,7 +357,7 @@ ResourceSource *PlatformUtilities::createResource( const QString &prefix, const 
       }
     }
 
-    QgsMessageLog::logMessage( tr( "Failed to save file resource" ), "QField", Qgis::Critical );
+    QgsMessageLog::logMessage( tr( "Failed to save file resource" ), "SIGPACGo", Qgis::Critical );
   }
 
   return new ResourceSource( parent, prefix, QString() );
@@ -405,11 +408,11 @@ ProjectSource *PlatformUtilities::openProject( QObject * )
   ProjectSource *source = new ProjectSource();
   QString fileName { QFileDialog::getOpenFileName( nullptr,
                                                    tr( "Open File" ),
-                                                   settings.value( QStringLiteral( "QField/lastOpenDir" ), QString() ).toString(),
+                                                   settings.value( QStringLiteral( "SIGPACGo/lastOpenDir" ), QString() ).toString(),
                                                    QStringLiteral( "%1 (*.%2);;%3 (*.%4);;%5 (*.%6);;%7 (*.%8)" ).arg( tr( "All Supported Files" ), ( SUPPORTED_PROJECT_EXTENSIONS + SUPPORTED_VECTOR_EXTENSIONS + SUPPORTED_RASTER_EXTENSIONS ).join( QStringLiteral( " *." ) ), tr( "QGIS Project Files" ), SUPPORTED_PROJECT_EXTENSIONS.join( QStringLiteral( " *." ) ), tr( "Vector Datasets" ), SUPPORTED_VECTOR_EXTENSIONS.join( QStringLiteral( " *." ) ), tr( "Raster Datasets" ), SUPPORTED_RASTER_EXTENSIONS.join( QStringLiteral( " *." ) ) ) ) };
   if ( !fileName.isEmpty() )
   {
-    settings.setValue( QStringLiteral( "/QField/lastOpenDir" ), QFileInfo( fileName ).absolutePath() );
+    settings.setValue( QStringLiteral( "/SIGPAC-Go/lastOpenDir" ), QFileInfo( fileName ).absolutePath() );
     QTimer::singleShot( 0, this, [source, fileName]() { emit source->projectOpened( fileName ); } );
   }
   return source;
