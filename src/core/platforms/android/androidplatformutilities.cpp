@@ -1,10 +1,10 @@
 /***************************************************************************
-                            androidplatformutilities.cpp  -  utilities for qfield
+                          androidplatformutilities.cpp  -  utilities for SIGPAC-Go
 
-                              -------------------
-              begin                : February 2016
-              copyright            : (C) 2016 by Matthias Kuhn
-              email                : matthias@opengis.ch
+                            -------------------
+            begin                : February 2016
+            copyright            : (C) 2016-2025 by IM-AGRIENG
+            email               : support@im-agrieng.com
  ***************************************************************************/
 
 /***************************************************************************
@@ -16,255 +16,253 @@
  *                                                                         *
  ***************************************************************************/
 
-#include "androidplatformutilities.h"
-#include "androidprojectsource.h"
-#include "androidresourcesource.h"
-#include "androidviewstatus.h"
-#include "appinterface.h"
-#include "fileutils.h"
-#include "qfield.h"
-#include "qfield_android.h"
-#include "qfieldcloudconnection.h"
-
-#include <QJniEnvironment>
-#include <QJniObject>
-#include <QtCore/private/qandroidextras_p.h>
-
-inline QJniObject qtAndroidContext()
-{
-  return QJniObject( QCoreApplication::instance()->nativeInterface<QNativeInterface::QAndroidApplication>()->context() );
-}
-
-inline void runOnAndroidMainThread( const std::function<void()> &runnable )
-{
-  QCoreApplication::instance()->nativeInterface<QNativeInterface::QAndroidApplication>()->runOnAndroidMainThread( [runnable]() {
-    runnable();
-    return QVariant();
-  } );
-}
-
-#include <QApplication>
-#include <QCoreApplication>
-#include <QDebug>
-#include <QDir>
-#include <QFile>
-#include <QFileInfo>
-#include <QMap>
-#include <QMimeDatabase>
-#include <QQmlApplicationEngine>
-#include <QQmlContext>
-#include <QScreen>
-#include <QSettings>
-#include <QStandardPaths>
-#include <QString>
-#include <QTimer>
-#include <qgsfileutils.h>
-
-#include <android/bitmap.h>
-#include <android/log.h>
-#include <jni.h>
-
-const char *const applicationName = "QField";
-
-#define GLUE_HELPER( u, v, w, x, y, z ) u##v##w##x##y##z
-#define JNI_FUNCTION_NAME( package_name, class_name, function_name ) GLUE_HELPER( Java_ch_opengis_, package_name, _, class_name, _, function_name )
-
-AndroidPlatformUtilities::AndroidPlatformUtilities()
-  : mActivity( qtAndroidContext() )
-  , mSystemGenericDataLocation( QStandardPaths::writableLocation( QStandardPaths::AppDataLocation ) + QStringLiteral( "/share" ) )
-{
-}
-
-PlatformUtilities::Capabilities AndroidPlatformUtilities::capabilities() const
-{
-  PlatformUtilities::Capabilities capabilities = Capabilities() | NativeCamera | AdjustBrightness | CustomImport | CustomExport | CustomSend | FilePicker | VolumeKeys | UpdateProjectFromArchive;
-#ifdef WITH_SENTRY
-  capabilities |= SentryFramework;
-#endif
-  return capabilities;
-}
-
-void AndroidPlatformUtilities::afterUpdate()
-{
-  // Copy data away from the virtual path `assets:/` to a path accessible also for non-qt-based libs
-
-  if ( mActivity.isValid() )
-  {
-    runOnAndroidMainThread( [] {
-      auto activity = qtAndroidContext();
-      if ( activity.isValid() )
-      {
-        QJniObject messageJni = QJniObject::fromString( QObject::tr( "Please wait while QField installation finalizes." ) );
-        activity.callMethod<void>( "showBlockingProgressDialog", "(Ljava/lang/String;)V", messageJni.object<jstring>() );
-      }
-    } );
-  }
-
-  FileUtils::copyRecursively( QStringLiteral( "assets:/" ), mSystemGenericDataLocation );
-
-  if ( mActivity.isValid() )
-  {
-    runOnAndroidMainThread( [] {
-      auto activity = qtAndroidContext();
-      if ( activity.isValid() )
-      {
-        activity.callMethod<void>( "dismissBlockingProgressDialog" );
-      }
-    } );
-  }
-}
-
-QString AndroidPlatformUtilities::systemSharedDataLocation() const
-{
-  return mSystemGenericDataLocation;
-}
-
-bool AndroidPlatformUtilities::hasQgsProject() const
-{
-  return !getIntentExtra( "QGS_PROJECT" ).isEmpty();
-}
-
-void AndroidPlatformUtilities::loadQgsProject() const
-{
-  if ( mActivity.isValid() && hasQgsProject() )
-  {
-    runOnAndroidMainThread( [] {
-      auto activity = qtAndroidContext();
-      if ( activity.isValid() )
-      {
-        activity.callMethod<void>( "processProjectIntent" );
-      }
-    } );
-  }
-}
-
-QStringList AndroidPlatformUtilities::appDataDirs() const
-{
-  const QString dataDirs = getIntentExtra( "QFIELD_APP_DATA_DIRS" );
-  return ( !dataDirs.isEmpty() ? dataDirs.split( "--;--" ) : QStringList() );
-}
-
-QString AndroidPlatformUtilities::applicationDirectory() const
-{
-  if ( mActivity.isValid() )
-  {
-    QJniObject rootDirs = mActivity.callObjectMethod<jstring>( "getApplicationDirectory" );
-    if ( rootDirs.isValid() )
-    {
-      return rootDirs.toString();
-    }
-  }
-
-  return QString();
-}
-
-QStringList AndroidPlatformUtilities::additionalApplicationDirectories() const
-{
-  if ( mActivity.isValid() )
-  {
-    QJniObject rootDirs = mActivity.callObjectMethod<jstring>( "getAdditionalApplicationDirectories" );
-    if ( rootDirs.isValid() )
-    {
-      return rootDirs.toString().split( "--;--" );
-    }
-  }
-
-  return QStringList();
-}
-
-QStringList AndroidPlatformUtilities::rootDirectories() const
-{
-  if ( mActivity.isValid() )
-  {
-    QJniObject rootDirs = mActivity.callObjectMethod<jstring>( "getRootDirectories" );
-    if ( rootDirs.isValid() )
-    {
-      return rootDirs.toString().split( "--;--" );
-    }
-  }
-
-  return QStringList();
-}
-
-void AndroidPlatformUtilities::importProjectFolder() const
-{
-  if ( mActivity.isValid() )
-  {
-    runOnAndroidMainThread( [] {
-      auto activity = qtAndroidContext();
-      if ( activity.isValid() )
-      {
-        activity.callMethod<void>( "triggerImportProjectFolder" );
-      }
-    } );
-  }
-}
-
-void AndroidPlatformUtilities::importProjectArchive() const
-{
-  if ( mActivity.isValid() )
-  {
-    runOnAndroidMainThread( [] {
-      auto activity = qtAndroidContext();
-      if ( activity.isValid() )
-      {
-        activity.callMethod<void>( "triggerImportProjectArchive" );
-      }
-    } );
-  }
-}
-
-void AndroidPlatformUtilities::importDatasets() const
-{
-  if ( mActivity.isValid() )
-  {
-    runOnAndroidMainThread( [] {
-      auto activity = qtAndroidContext();
-      if ( activity.isValid() )
-      {
-        activity.callMethod<void>( "triggerImportDatasets" );
-      }
-    } );
-  }
-}
-
-void AndroidPlatformUtilities::updateProjectFromArchive( const QString &projectPath ) const
-{
-  if ( mActivity.isValid() )
-  {
-    runOnAndroidMainThread( [projectPath] {
-      auto activity = qtAndroidContext();
-      if ( activity.isValid() )
-      {
-        QJniObject projectPathJni = QJniObject::fromString( projectPath );
-        activity.callMethod<void>( "triggerUpdateProjectFromArchive", "(Ljava/lang/String;)V", projectPathJni.object<jstring>() );
-      }
-    } );
-  }
-}
-
-void AndroidPlatformUtilities::sendDatasetTo( const QString &path ) const
-{
-  if ( mActivity.isValid() )
-  {
-    runOnAndroidMainThread( [path] {
-      auto activity = qtAndroidContext();
-      if ( activity.isValid() )
-      {
-        QStringList paths = QStringList() << path;
-        const QSet<QString> files = QgsFileUtils::sidecarFilesForPath( path );
-        for ( const QString &file : files )
-        {
-          paths << file;
-        }
-        QJniObject pathsJni = QJniObject::fromString( paths.join( "--;--" ) );
-        activity.callMethod<void>( "sendDatasetTo", "(Ljava/lang/String;)V", pathsJni.object<jstring>() );
-      }
-    } );
-  }
-}
-
-void AndroidPlatformUtilities::exportDatasetTo( const QString &path ) const
+ #include "androidplatformutilities.h"
+ #include "androidprojectsource.h"
+ #include "androidresourcesource.h"
+ #include "androidviewstatus.h"
+ #include "appinterface.h"
+ #include "fileutils.h"
+ #include "sigpacgo.h"
+ #include "sigpacgo_android.h"
+ #include "sigpacgocloudconnection.h"
+ 
+ #include <QJniEnvironment>
+ #include <QJniObject>
+ #include <QtCore/private/qandroidextras_p.h>
+ 
+ inline QJniObject qtAndroidContext()
+ {
+   return QJniObject( QCoreApplication::instance()->nativeInterface<QNativeInterface::QAndroidApplication>()->context() );
+ }
+ 
+ inline void runOnAndroidMainThread( const std::function<void()> &runnable )
+ {
+   QCoreApplication::instance()->nativeInterface<QNativeInterface::QAndroidApplication>()->runOnAndroidMainThread( [runnable]() {
+     runnable();
+     return QVariant();
+   } );
+ }
+ 
+ #include <QApplication>
+ #include <QCoreApplication>
+ #include <QDebug>
+ #include <QDir>
+ #include <QFile>
+ #include <QFileInfo>
+ #include <QMap>
+ #include <QMimeDatabase>
+ #include <QQmlApplicationEngine>
+ #include <QQmlContext>
+ #include <QScreen>
+ #include <QSettings>
+ #include <QStandardPaths>
+ #include <QString>
+ #include <QTimer>
+ #include <qgsfileutils.h>
+ 
+ #include <android/bitmap.h>
+ #include <android/log.h>
+ #include <jni.h>
+ 
+ const char *const applicationName = "SIGPAC-Go";
+ 
+ #define GLUE_HELPER( u, v, w, x, y, z ) u##v##w##x##y##z
+ #define JNI_FUNCTION_NAME( package_name, class_name, function_name ) GLUE_HELPER( Java_ch_opengis_, package_name, _, class_name, _, function_name )
+ 
+ AndroidPlatformUtilities::AndroidPlatformUtilities()
+   : mActivity( qtAndroidContext() )
+   , mSystemGenericDataLocation( QStandardPaths::writableLocation( QStandardPaths::AppDataLocation ) + QStringLiteral( "/share" ) )
+ {
+ }
+ 
+ PlatformUtilities::Capabilities AndroidPlatformUtilities::capabilities() const
+ {
+   PlatformUtilities::Capabilities capabilities = Capabilities() | NativeCamera | AdjustBrightness | CustomImport | CustomExport | CustomSend | FilePicker | VolumeKeys | UpdateProjectFromArchive;
+ #ifdef WITH_SENTRY
+   capabilities |= SentryFramework;
+ #endif
+   return capabilities;
+ }
+ 
+ void AndroidPlatformUtilities::afterUpdate()
+ {
+   // Copy data away from the virtual path `assets:/` to a path accessible also for non-qt-based libs
+ 
+   if ( mActivity.isValid() )
+   {
+     runOnAndroidMainThread( [] {
+       auto activity = qtAndroidContext();
+       if ( activity.isValid() )
+       {
+         QJniObject messageJni = QJniObject::fromString( QObject::tr( "Please wait while SIGPAC-Go installation finalizes." ) );
+         activity.callMethod<void>( "showBlockingProgressDialog", "(Ljava/lang/String;)V", messageJni.object<jstring>() );
+       }
+     } );
+   }
+ 
+   FileUtils::copyRecursively( QStringLiteral( "assets:/" ), mSystemGenericDataLocation );
+ 
+   if ( mActivity.isValid() )
+   {
+     runOnAndroidMainThread( [] {
+       auto activity = qtAndroidContext();
+       if ( activity.isValid() )
+       {
+         activity.callMethod<void>( "dismissBlockingProgressDialog" );
+       }
+     } );
+   }
+ }
+ 
+ QString AndroidPlatformUtilities::systemSharedDataLocation() const
+ {
+   return mSystemGenericDataLocation;
+ }
+ 
+ bool AndroidPlatformUtilities::hasProject() const
+ {
+   return !getIntentExtra( "SIGPACGO_PROJECT" ).isEmpty();
+ }
+ 
+ void AndroidPlatformUtilities::loadProject() const
+ {
+   if ( mActivity.isValid() && hasProject() )
+   {
+     runOnAndroidMainThread( [] {
+       auto activity = qtAndroidContext();
+       if ( activity.isValid() )
+       {
+         activity.callMethod<void>( "processProjectIntent" );
+       }
+     } );
+   }
+ }
+ 
+ QStringList AndroidPlatformUtilities::appDataDirs() const
+ {
+   const QString dataDirs = getIntentExtra( "SIGPACGO_APP_DATA_DIRS" );
+   return ( !dataDirs.isEmpty() ? dataDirs.split( "--;--" ) : QStringList() );
+ }
+ 
+ QString AndroidPlatformUtilities::applicationDirectory() const
+ {
+   if ( mActivity.isValid() )
+   {
+     QJniObject rootDirs = mActivity.callObjectMethod<jstring>( "getApplicationDirectory" );
+     if ( rootDirs.isValid() )
+     {
+       return rootDirs.toString();
+     }
+   }
+ 
+   return QString();
+ }
+ QStringList AndroidPlatformUtilities::additionalApplicationDirectories() const
+ {
+   if ( mActivity.isValid() )
+   {
+     QJniObject rootDirs = mActivity.callObjectMethod<jstring>( "getAdditionalApplicationDirectories" );
+     if ( rootDirs.isValid() )
+     {
+       return rootDirs.toString().split( "--;--" );
+     }
+   }
+ 
+   return QStringList();
+ }
+ 
+ QStringList AndroidPlatformUtilities::rootDirectories() const
+ {
+   if ( mActivity.isValid() )
+   {
+     QJniObject rootDirs = mActivity.callObjectMethod<jstring>( "getRootDirectories" );
+     if ( rootDirs.isValid() )
+     {
+       return rootDirs.toString().split( "--;--" );
+     }
+   }
+ 
+   return QStringList();
+ }
+ 
+ void AndroidPlatformUtilities::importProjectFolder() const
+ {
+   if ( mActivity.isValid() )
+   {
+     runOnAndroidMainThread( [] {
+       auto activity = qtAndroidContext();
+       if ( activity.isValid() )
+       {
+         activity.callMethod<void>( "triggerImportProjectFolder" );
+       }
+     } );
+   }
+ }
+ 
+ void AndroidPlatformUtilities::importProjectArchive() const
+ {
+   if ( mActivity.isValid() )
+   {
+     runOnAndroidMainThread( [] {
+       auto activity = qtAndroidContext();
+       if ( activity.isValid() )
+       {
+         activity.callMethod<void>( "triggerImportProjectArchive" );
+       }
+     } );
+   }
+ }
+ 
+ void AndroidPlatformUtilities::importDatasets() const
+ {
+   if ( mActivity.isValid() )
+   {
+     runOnAndroidMainThread( [] {
+       auto activity = qtAndroidContext();
+       if ( activity.isValid() )
+       {
+         activity.callMethod<void>( "triggerImportDatasets" );
+       }
+     } );
+   }
+ }
+ 
+ void AndroidPlatformUtilities::updateProjectFromArchive( const QString &projectPath ) const
+ {
+   if ( mActivity.isValid() )
+   {
+     runOnAndroidMainThread( [projectPath] {
+       auto activity = qtAndroidContext();
+       if ( activity.isValid() )
+       {
+         QJniObject projectPathJni = QJniObject::fromString( projectPath );
+         activity.callMethod<void>( "triggerUpdateProjectFromArchive", "(Ljava/lang/String;)V", projectPathJni.object<jstring>() );
+       }
+     } );
+   }
+ }
+ 
+ void AndroidPlatformUtilities::sendDatasetTo( const QString &path ) const
+ {
+   if ( mActivity.isValid() )
+   {
+     runOnAndroidMainThread( [path] {
+       auto activity = qtAndroidContext();
+       if ( activity.isValid() )
+       {
+         QStringList paths = QStringList() << path;
+         const QSet<QString> files = QgsFileUtils::sidecarFilesForPath( path );
+         for ( const QString &file : files )
+         {
+           paths << file;
+         }
+         QJniObject pathsJni = QJniObject::fromString( paths.join( "--;--" ) );
+         activity.callMethod<void>( "sendDatasetTo", "(Ljava/lang/String;)V", pathsJni.object<jstring>() );
+       }
+     } );
+   }
+ }
+ void AndroidPlatformUtilities::exportDatasetTo( const QString &path ) const
 {
   if ( mActivity.isValid() )
   {
@@ -370,7 +368,6 @@ void AndroidPlatformUtilities::removeFolder( const QString &path ) const
     }
   }
 }
-
 QString AndroidPlatformUtilities::getIntentExtra( const QString &extra, QJniObject extras ) const
 {
   if ( extras == nullptr )
@@ -405,12 +402,10 @@ QJniObject AndroidPlatformUtilities::getNativeExtras() const
   if ( intent.isValid() )
   {
     QJniObject extras = intent.callObjectMethod( "getExtras", "()Landroid/os/Bundle;" );
-
     return extras;
   }
   return nullptr;
 }
-
 ResourceSource *AndroidPlatformUtilities::processCameraActivity( const QString &prefix, const QString &filePath, const QString &suffix, bool isVideo, QObject *parent )
 {
   if ( !checkCameraPermissions() )
@@ -433,12 +428,12 @@ ResourceSource *AndroidPlatformUtilities::processCameraActivity( const QString &
         QJniObject filePathJni = QJniObject::fromString( filePath );
         QJniObject suffixJni = QJniObject::fromString( suffix );
 
-        QSettings().setValue( QStringLiteral( "QField/nativeCameraLaunched" ), true );
+        QSettings().setValue( QStringLiteral( "SIGPAC-Go/nativeCameraLaunched" ), true );
         activity.callMethod<void>( "getCameraResource", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)V",
-                                   prefixJni.object<jstring>(),
-                                   filePathJni.object<jstring>(),
-                                   suffixJni.object<jstring>(),
-                                   isVideo );
+                                  prefixJni.object<jstring>(),
+                                  filePathJni.object<jstring>(),
+                                  suffixJni.object<jstring>(),
+                                  isVideo );
       }
     } );
   }
@@ -474,11 +469,11 @@ ResourceSource *AndroidPlatformUtilities::processGalleryActivity( const QString 
         QJniObject filePathJni = QJniObject::fromString( filePath );
         QJniObject mimeTypeJni = QJniObject::fromString( mimeType );
 
-        QSettings().setValue( QStringLiteral( "QField/nativeCameraLaunched" ), true );
+        QSettings().setValue( QStringLiteral( "SIGPAC-Go/nativeCameraLaunched" ), true );
         activity.callMethod<void>( "getGalleryResource", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
-                                   prefixJni.object<jstring>(),
-                                   filePathJni.object<jstring>(),
-                                   mimeTypeJni.object<jstring>() );
+                                  prefixJni.object<jstring>(),
+                                  filePathJni.object<jstring>(),
+                                  mimeTypeJni.object<jstring>() );
       }
     } );
   }
@@ -494,7 +489,6 @@ ResourceSource *AndroidPlatformUtilities::getGalleryVideo( const QString &prefix
 {
   return processGalleryActivity( prefix, videoFilePath, QStringLiteral( "video/*" ), parent );
 }
-
 ResourceSource *AndroidPlatformUtilities::getFile( const QString &prefix, const QString &filePath, FileType fileType, QObject *parent )
 {
   const QFileInfo destinationInfo( prefix + filePath );
@@ -526,11 +520,11 @@ ResourceSource *AndroidPlatformUtilities::getFile( const QString &prefix, const 
         QJniObject filePathJni = QJniObject::fromString( filePath );
         QJniObject mimeTypeJni = QJniObject::fromString( mimeType );
 
-        QSettings().setValue( QStringLiteral( "QField/nativeCameraLaunched" ), true );
+        QSettings().setValue( QStringLiteral( "SIGPAC-Go/nativeCameraLaunched" ), true );
         activity.callMethod<void>( "getFilePickerResource", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
-                                   prefixJni.object<jstring>(),
-                                   filePathJni.object<jstring>(),
-                                   mimeTypeJni.object<jstring>() );
+                                  prefixJni.object<jstring>(),
+                                  filePathJni.object<jstring>(),
+                                  mimeTypeJni.object<jstring>() );
       }
     } );
   }
@@ -560,11 +554,11 @@ ViewStatus *AndroidPlatformUtilities::open( const QString &filePath, bool isEdit
         QJniObject filePathJni = QJniObject::fromString( filePath );
         QJniObject mimeTypeJni = QJniObject::fromString( mimeType );
 
-        QSettings().setValue( QStringLiteral( "QField/nativeCameraLaunched" ), true );
+        QSettings().setValue( QStringLiteral( "SIGPAC-Go/nativeCameraLaunched" ), true );
         activity.callMethod<void>( "openResource", "(Ljava/lang/String;Ljava/lang/String;Z)V",
-                                   filePathJni.object<jstring>(),
-                                   mimeTypeJni.object<jstring>(),
-                                   isEditing );
+                                  filePathJni.object<jstring>(),
+                                  mimeTypeJni.object<jstring>(),
+                                  isEditing );
       }
     } );
   }
@@ -573,7 +567,7 @@ ViewStatus *AndroidPlatformUtilities::open( const QString &filePath, bool isEdit
 
 void AndroidPlatformUtilities::requestStoragePermission() const
 {
-  if ( !QSettings().value( QStringLiteral( "QField/storagePermissionChecked" ), false ).toBool() )
+  if ( !QSettings().value( QStringLiteral( "SIGPAC-Go/storagePermissionChecked" ), false ).toBool() )
   {
     QStringList permissions;
     permissions << "android.permission.READ_EXTERNAL_STORAGE"
@@ -581,20 +575,22 @@ void AndroidPlatformUtilities::requestStoragePermission() const
                 << "android.permission.ACCESS_MEDIA_LOCATION";
 
     checkAndAcquirePermissions( permissions, true );
-    QSettings().setValue( QStringLiteral( "QField/storagePermissionChecked" ), true );
+    QSettings().setValue( QStringLiteral( "SIGPAC-Go/storagePermissionChecked" ), true );
   }
 }
 
 bool AndroidPlatformUtilities::checkPositioningPermissions() const
 {
-  // First check for coarse permissions. If the user configured QField to only get coarse permissions
-  // it's his wish and we just let it be.
+  // First check for coarse permissions. If the user configured SIGPAC-Go to only get coarse permissions
+  // it's their wish and we just let it be.
   auto r = QtAndroidPrivate::checkPermission( "android.permission.ACCESS_COARSE_LOCATION" ).result();
   if ( r == QtAndroidPrivate::Denied )
   {
     return checkAndAcquirePermissions( { QStringLiteral( "android.permission.ACCESS_FINE_LOCATION" ) } );
   }
   return true;
+}
+return true;
 }
 
 bool AndroidPlatformUtilities::checkCameraPermissions() const
@@ -612,11 +608,11 @@ bool AndroidPlatformUtilities::checkAndAcquirePermissions( QStringList permissio
   if ( !forceAsk )
   {
     permissions.erase( std::remove_if( permissions.begin(), permissions.end(),
-                                       []( const QString &permission ) {
-                                         auto r = QtAndroidPrivate::checkPermission( permission ).result();
-                                         return r != QtAndroidPrivate::Denied;
-                                       } ),
-                       permissions.end() );
+                                      []( const QString &permission ) {
+                                        auto r = QtAndroidPrivate::checkPermission( permission ).result();
+                                        return r != QtAndroidPrivate::Denied;
+                                      } ),
+                      permissions.end() );
   }
 
   if ( !permissions.isEmpty() )
@@ -697,7 +693,6 @@ void AndroidPlatformUtilities::restoreBrightness()
     } );
   }
 }
-
 void AndroidPlatformUtilities::setHandleVolumeKeys( const bool handle )
 {
   if ( mActivity.isValid() )
@@ -710,6 +705,23 @@ void AndroidPlatformUtilities::setHandleVolumeKeys( const bool handle )
       }
     } );
   }
+}
+
+void AndroidPlatformUtilities::uploadPendingAttachments( SIGPACGoCloudConnection *connection ) const
+{
+  // Request notification permission
+  checkAndAcquirePermissions( { QStringLiteral( "android.permission.POST_NOTIFICATIONS" ) } );
+
+  QTimer::singleShot( 500, [connection]() {
+    if ( connection )
+    {
+      qInfo() << "Launching SIGPAC-Go Cloud service...";
+      QJniObject::callStaticMethod<void>( "ch/opengis/" APP_PACKAGE_NAME "/SIGPACGoCloudService",
+                                         "startSIGPACGoCloudService",
+                                         "(Landroid/content/Context;)V",
+                                         qtAndroidContext().object() );
+    }
+  } );
 }
 
 QVariantMap AndroidPlatformUtilities::sceneMargins( QQuickWindow *window ) const
@@ -728,23 +740,6 @@ QVariantMap AndroidPlatformUtilities::sceneMargins( QQuickWindow *window ) const
   margins[QLatin1String( "bottom" )] = navigationBarMargin;
   margins[QLatin1String( "left" )] = 0.0;
   return margins;
-}
-
-void AndroidPlatformUtilities::uploadPendingAttachments( QFieldCloudConnection *connection ) const
-{
-  // Request notification permission
-  checkAndAcquirePermissions( { QStringLiteral( "android.permission.POST_NOTIFICATIONS" ) } );
-
-  QTimer::singleShot( 500, [connection]() {
-    if ( connection )
-    {
-      qInfo() << "Launching QFieldCloud service...";
-      QJniObject::callStaticMethod<void>( "ch/opengis/" APP_PACKAGE_NAME "/QFieldCloudService",
-                                          "startQFieldCloudService",
-                                          "(Landroid/content/Context;)V",
-                                          qtAndroidContext().object() );
-    }
-  } );
 }
 
 bool AndroidPlatformUtilities::isSystemDarkTheme() const
@@ -781,28 +776,27 @@ void AndroidPlatformUtilities::startPositioningService() const
   // Request notification permission
   checkAndAcquirePermissions( { QStringLiteral( "android.permission.POST_NOTIFICATIONS" ) } );
 
-  qInfo() << "Launching QField positioning service...";
-  QJniObject::callStaticMethod<void>( "ch/opengis/" APP_PACKAGE_NAME "/QFieldPositioningService",
-                                      "startQFieldPositioningService",
-                                      "(Landroid/content/Context;)V",
-                                      qtAndroidContext().object() );
+  qInfo() << "Launching SIGPAC-Go positioning service...";
+  QJniObject::callStaticMethod<void>( "ch/opengis/" APP_PACKAGE_NAME "/SIGPACGoPositioningService",
+                                     "startSIGPACGoPositioningService",
+                                     "(Landroid/content/Context;)V",
+                                     qtAndroidContext().object() );
 }
-
 void AndroidPlatformUtilities::stopPositioningService() const
 {
-  qInfo() << "Terminating QField positioning service...";
-  QJniObject::callStaticMethod<void>( "ch/opengis/" APP_PACKAGE_NAME "/QFieldPositioningService",
-                                      "stopQFieldPositioningService",
-                                      "(Landroid/content/Context;)V",
-                                      qtAndroidContext().object() );
+  qInfo() << "Terminating SIGPAC-Go positioning service...";
+  QJniObject::callStaticMethod<void>( "ch/opengis/" APP_PACKAGE_NAME "/SIGPACGoPositioningService",
+                                     "stopSIGPACGoPositioningService",
+                                     "(Landroid/content/Context;)V",
+                                     qtAndroidContext().object() );
 }
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// QFieldActivity class functions
-JNIEXPORT void JNICALL JNI_FUNCTION_NAME( APP_PACKAGE_JNI_NAME, QFieldActivity, openProject )( JNIEnv *env, jobject obj, jstring path )
+// SIGPACGoActivity class functions
+JNIEXPORT void JNICALL JNI_FUNCTION_NAME( APP_PACKAGE_JNI_NAME, SIGPACGoActivity, openProject )( JNIEnv *env, jobject obj, jstring path )
 {
   if ( AppInterface::instance() )
   {
@@ -813,7 +807,7 @@ JNIEXPORT void JNICALL JNI_FUNCTION_NAME( APP_PACKAGE_JNI_NAME, QFieldActivity, 
   return;
 }
 
-JNIEXPORT void JNICALL JNI_FUNCTION_NAME( APP_PACKAGE_JNI_NAME, QFieldActivity, openPath )( JNIEnv *env, jobject obj, jstring path )
+JNIEXPORT void JNICALL JNI_FUNCTION_NAME( APP_PACKAGE_JNI_NAME, SIGPACGoActivity, openPath )( JNIEnv *env, jobject obj, jstring path )
 {
   if ( AppInterface::instance() )
   {
@@ -827,7 +821,7 @@ JNIEXPORT void JNICALL JNI_FUNCTION_NAME( APP_PACKAGE_JNI_NAME, QFieldActivity, 
 #define ANDROID_VOLUME_DOWN 25
 #define ANDROID_VOLUME_UP 24
 
-JNIEXPORT void JNICALL JNI_FUNCTION_NAME( APP_PACKAGE_JNI_NAME, QFieldActivity, volumeKeyDown )( JNIEnv *env, jobject obj, int volumeKeyCode )
+JNIEXPORT void JNICALL JNI_FUNCTION_NAME( APP_PACKAGE_JNI_NAME, SIGPACGoActivity, volumeKeyDown )( JNIEnv *env, jobject obj, int volumeKeyCode )
 {
   if ( AppInterface::instance() )
   {
@@ -836,7 +830,7 @@ JNIEXPORT void JNICALL JNI_FUNCTION_NAME( APP_PACKAGE_JNI_NAME, QFieldActivity, 
   return;
 }
 
-JNIEXPORT void JNICALL JNI_FUNCTION_NAME( APP_PACKAGE_JNI_NAME, QFieldActivity, volumeKeyUp )( JNIEnv *env, jobject obj, int volumeKeyCode )
+JNIEXPORT void JNICALL JNI_FUNCTION_NAME( APP_PACKAGE_JNI_NAME, SIGPACGoActivity, volumeKeyUp )( JNIEnv *env, jobject obj, int volumeKeyCode )
 {
   if ( AppInterface::instance() )
   {
@@ -844,8 +838,7 @@ JNIEXPORT void JNICALL JNI_FUNCTION_NAME( APP_PACKAGE_JNI_NAME, QFieldActivity, 
   }
   return;
 }
-
-JNIEXPORT void JNICALL JNI_FUNCTION_NAME( APP_PACKAGE_JNI_NAME, QFieldActivity, resourceReceived )( JNIEnv *env, jobject obj, jstring path )
+JNIEXPORT void JNICALL JNI_FUNCTION_NAME( APP_PACKAGE_JNI_NAME, SIGPACGoActivity, resourceReceived )( JNIEnv *env, jobject obj, jstring path )
 {
   if ( PlatformUtilities::instance() )
   {
@@ -856,7 +849,7 @@ JNIEXPORT void JNICALL JNI_FUNCTION_NAME( APP_PACKAGE_JNI_NAME, QFieldActivity, 
   return;
 }
 
-JNIEXPORT void JNICALL JNI_FUNCTION_NAME( APP_PACKAGE_JNI_NAME, QFieldActivity, resourceOpened )( JNIEnv *env, jobject obj, jstring path )
+JNIEXPORT void JNICALL JNI_FUNCTION_NAME( APP_PACKAGE_JNI_NAME, SIGPACGoActivity, resourceOpened )( JNIEnv *env, jobject obj, jstring path )
 {
   if ( PlatformUtilities::instance() )
   {
@@ -867,7 +860,7 @@ JNIEXPORT void JNICALL JNI_FUNCTION_NAME( APP_PACKAGE_JNI_NAME, QFieldActivity, 
   return;
 }
 
-JNIEXPORT void JNICALL JNI_FUNCTION_NAME( APP_PACKAGE_JNI_NAME, QFieldActivity, resourceCanceled )( JNIEnv *env, jobject obj, jstring message )
+JNIEXPORT void JNICALL JNI_FUNCTION_NAME( APP_PACKAGE_JNI_NAME, SIGPACGoActivity, resourceCanceled )( JNIEnv *env, jobject obj, jstring message )
 {
   if ( PlatformUtilities::instance() )
   {
@@ -877,7 +870,6 @@ JNIEXPORT void JNICALL JNI_FUNCTION_NAME( APP_PACKAGE_JNI_NAME, QFieldActivity, 
   }
   return;
 }
-
 #ifdef __cplusplus
 }
 #endif
