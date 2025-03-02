@@ -1,5 +1,5 @@
 /***************************************************************************
-                            platformutilities.h  -  utilities for qfield
+                            platformutilities.h  -  utilities for SIGPACGo
 
                               -------------------
               begin                : Wed Dec 04 10:48:28 CET 2015
@@ -27,7 +27,7 @@
 #include <qgsfield.h>
 
 
-class QFieldCloudConnection;
+class SIGPACGoCloudConnection;
 class ProjectSource;
 class ResourceSource;
 
@@ -134,11 +134,11 @@ class QFIELD_CORE_EXPORT PlatformUtilities : public QObject
      */
     virtual QStringList rootDirectories() const;
 
-    //! Requests and imports a project folder into QField's application directory action
+    //! Requests and imports a project folder into SIGPACGo's application directory action
     Q_INVOKABLE virtual void importProjectFolder() const;
-    //! Requests and imports a project archive into QField's application directory action
+    //! Requests and imports a project archive into SIGPACGo's application directory action
     Q_INVOKABLE virtual void importProjectArchive() const;
-    //! Requests and imports one or more datasets into QField's application directory action
+    //! Requests and imports one or more datasets into SIGPACGo's application directory action
     Q_INVOKABLE virtual void importDatasets() const;
 
     /**
@@ -227,7 +227,7 @@ class QFIELD_CORE_EXPORT PlatformUtilities : public QObject
      * permissions.
      * It will return true, if at least coarse permissions are granted. It will
      * ask for fine permissions if none are granted.
-     * \deprecated Since QField 3.1
+     * \deprecated Since SIGPACGo 3.1
      */
     Q_DECL_DEPRECATED Q_INVOKABLE virtual bool checkPositioningPermissions() const;
 
@@ -235,7 +235,7 @@ class QFIELD_CORE_EXPORT PlatformUtilities : public QObject
      * Checks for camera permissions on the device.
      * If the permissions are not given, the user will be asked to grant
      * permissions.
-     * \deprecated Since QField 3.1
+     * \deprecated Since SIGPACGo 3.1
      */
     Q_DECL_DEPRECATED Q_INVOKABLE virtual bool checkCameraPermissions() const;
 
@@ -243,7 +243,7 @@ class QFIELD_CORE_EXPORT PlatformUtilities : public QObject
      * Checks for camera microphone on the device.
      * If the permissions are not given, the user will be asked to grant
      * permissions.
-     * \deprecated Since QField 3.1
+     * \deprecated Since SIGPACGo 3.1
      */
     Q_DECL_DEPRECATED Q_INVOKABLE virtual bool checkMicrophonePermissions() const;
 
@@ -264,7 +264,7 @@ class QFIELD_CORE_EXPORT PlatformUtilities : public QObject
     Q_INVOKABLE virtual void restoreBrightness() { return; };
 
     /**
-     * Sets whether the device volume keys are handled by QField.
+     * Sets whether the device volume keys are handled by SIGPACGo.
      */
     Q_INVOKABLE virtual void setHandleVolumeKeys( const bool handle ) { Q_UNUSED( handle ); }
 
